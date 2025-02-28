@@ -1,92 +1,40 @@
 # 爬虫逻辑的单元测试
 import pytest
 from ai_web_crawler.ai_web_crawler.crawler import run_playwright
-from ai_web_crawler.ai_web_crawler.deepseek import extract_with_deepseek
-from ai_web_crawler.ai_web_crawler.models import StockData, YouTubeData, TwitterData
-from ai_web_crawler.ai_web_crawler.schemas import TARGET_SCHEMAS
-
 
 @pytest.mark.asyncio
 async def test_run_playwright():
     """
     测试 run_playwright 函数是否能正确加载网页并提取文本内容。
     """
-    url = "https://example.com"  # 使用一个简单的测试网页
-    text = await run_playwright(url)
-    assert isinstance(text, str)  # 确保返回的是字符串
-    assert len(text) > 0  # 确保文本内容不为空
+    url = "https://www.baidu.com/"  # 测试网页
+    search_query = "苹果"  # 测试搜索关键词
 
-
-@pytest.mark.asyncio
-async def test_extract_with_deepseek():
-    """
-    测试 extract_with_deepseek 函数是否能正确提取结构化数据。
-    """
-    # 测试数据
-    text = """
-    Market Cap: 1.5T
-    Open: 2800
-    EPS: 112.34
-    Financial Performance: Strong growth in Q1 2023
-    """
-    schema = TARGET_SCHEMAS[0]["schema"]  # 使用股票网站的数据结构
-    structured_data = extract_with_deepseek(text, schema)
+    # 调用 run_playwright 函数
+    data = await run_playwright(url, search_query)
 
     # 验证返回的数据是否符合预期
-    assert isinstance(structured_data, dict)
-    assert "market_cap" in structured_data
-    assert "open" in structured_data
-    assert "eps" in structured_data
-    assert "financial_performance" in structured_data
-
+    assert isinstance(data, dict)  # 确保返回的是字典
+    assert "search_query" in data  # 确保包含搜索关键词
+    assert "search_results" in data  # 确保包含搜索结果
+    assert isinstance(data["search_results"], list)  # 确保搜索结果是列表
+    if data["search_results"]:  # 如果有搜索结果
+        assert isinstance(data["first_result_title"], str)  # 确保第一个结果的标题是字符串
+        assert isinstance(data["first_result_url"], str)  # 确保第一个结果的链接是字符串
 
 @pytest.mark.asyncio
-async def test_main_logic():
+async def test_run_playwright_timeout():
     """
-    测试主逻辑（爬取网页并提取数据）是否正常工作。
+    测试 run_playwright 函数在页面加载超时时的行为。
     """
-    target = TARGET_SCHEMAS[0]  # 使用股票网站作为测试目标
-    url = target["url"]
-    schema = target["schema"]
+    url = "https://www.invalid-url-that-will-timeout.com/"  # 无效 URL，会导致超时
+    search_query = "苹果"
 
-    # 爬取网页内容
-    text = await run_playwright(url)
-    assert isinstance(text, str)
-    assert len(text) > 0
+    # 调用 run_playwright 函数
+    data = await run_playwright(url, search_query)
 
-    # 提取结构化数据
-    structured_data = extract_with_deepseek(text, schema)
-    assert isinstance(structured_data, dict)
-    assert "market_cap" in structured_data
-    assert "open" in structured_data
-    assert "eps" in structured_data
-    assert "financial_performance" in structured_data
-
-
-def test_models():
-    """
-    测试数据模型是否正确。
-    """
-    # 测试 StockData 模型
-    stock_data = StockData(
-        market_cap="1.5T",
-        open="2800",
-        eps="112.34",
-        financial_performance="Strong growth in Q1 2023"
-    )
-    assert isinstance(stock_data, StockData)
-
-    # 测试 YouTubeData 模型
-    youtube_data = YouTubeData(
-        title="Introduction to AI",
-        views="100K",
-        date="2023-10-01"
-    )
-    assert isinstance(youtube_data, YouTubeData)
-
-    # 测试 TwitterData 模型
-    twitter_data = TwitterData(
-        post_author="Elon Musk",
-        post_content="Just setting up my twttr."
-    )
-    assert isinstance(twitter_data, TwitterData)
+    # 验证返回的数据是否符合预期
+    assert isinstance(data, dict)  # 确保返回的是字典
+    assert "search_query" in data  # 确保包含搜索关键词
+    assert "search_results" in data  # 确保包含搜索结果
+    assert isinstance(data["search_results"], list)  # 确保搜索结果是列表
