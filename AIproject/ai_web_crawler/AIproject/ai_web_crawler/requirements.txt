@@ -1,0 +1,6 @@
+# 项目依赖库列表
+playwright
+beautifulsoup4
+pyyaml
+pydantic
+requests
